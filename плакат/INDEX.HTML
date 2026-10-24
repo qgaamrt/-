@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивный плакат: Артур Корчуганов</title>
+    <style>
+        /* Базовые стили */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        /* Контейнер плаката */
+        .poster {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            background-color: #1a1a1a;
+            
+            /* ВАШ НОВЫЙ ФОН */
+            background-image: 
+                linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8)),
+                url('main_background.jpg'); 
+            background-size: cover;
+            background-position: center;
+            
+            border: 4px solid #d4af37;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+            overflow: hidden;
+        }
+
+        /* Заголовки */
+        .poster-header {
+            text-align: center;
+            padding-top: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .poster-title {
+            font-size: 34px;
+            font-weight: 800;
+            color: #f1c40f;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        .poster-subtitle {
+            font-size: 18px;
+            color: #ecf0f1;
+            font-style: italic;
+            margin-top: 10px;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        /* АУДИОПЛЕЕР */
+        .audio-player {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(241, 196, 15, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .audio-player span {
+            font-size: 14px;
+            color: #f1c40f;
+            font-weight: bold;
+        }
+        
+        audio {
+            height: 30px;
+            outline: none;
+        }
+
+        /* Интерактивные точки */
+        .hotspot {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #e74c3c;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.8);
+            transition: transform 0.2s ease;
+            z-index: 20;
+        }
+
+        .hotspot:hover {
+            transform: scale(1.15);
+        }
+
+        .hotspot::after {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border: 3px solid #e74c3c;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            opacity: 0;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        /* Позиции точек и их цвета */
+        .hs-1 { top: 30%; left: 15%; } 
+        .hs-2 { top: 50%; left: 30%; } 
+        .hs-3 { top: 25%; left: 55%; } 
+        
+        /* Кнопка с первой фотографией (Портрет/Фон) - ЗЕЛЕНАЯ */
+        .hs-hero-photo { top: 65%; left: 45%; background-color: #2ecc71; box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); font-size: 20px; } 
+        .hs-hero-photo::after { border-color: #2ecc71; }
+
+        /* Кнопка с фото улицы - ЖЕЛТАЯ */
+        .hs-street-photo { top: 60%; left: 65%; background-color: #f1c40f; color: #000; box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); font-size: 20px; } 
+        .hs-street-photo::after { border-color: #f1c40f; }
+        
+        /* Кнопка с видео - СИНЯЯ */
+        .hs-video { top: 35%; left: 80%; background-color: #3498db; box-shadow: 0 0 15px rgba(52, 152, 219, 0.8); font-size: 16px;}
+        .hs-video::after { border-color: #3498db; }
+        
+        /* Кнопка источников - СЕРАЯ */
+        .hs-5 { top: 80%; left: 20%; background-color: #95a5a6; box-shadow: 0 0 15px rgba(149, 165, 166, 0.8); font-size: 18px;}
+        .hs-5::after { border-color: #95a5a6; }
+
+        /* Модальное окно */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 20px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: #1e1e1e;
+            border-left: 6px solid #d4af37;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-title {
+            color: #f1c40f;
+            font-size: 24px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .modal-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ecf0f1;
+            text-align: justify;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            color: #bdc3c7;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-btn:hover {
+            color: #e74c3c;
+        }
+
+        /* Стили для медиафайлов */
+        #imageContainer img,
+        video {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #d4af37;
+        }
+        
+        video {
+            border-color: #333;
+        }
+
+        /* Подпись под фотографией */
+        .photo-caption {
+            text-align: center;
+            font-size: 14px;
+            color: #bdc3c7;
+            font-style: italic;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .poster { height: 500px; }
+            .poster-title { font-size: 24px; }
+            .poster-subtitle { font-size: 14px; }
+            .modal-content { padding: 20px; }
+            .modal-title { font-size: 20px; }
+            .modal-text { font-size: 14px; }
+            .hotspot { width: 34px; height: 34px; font-size: 14px; }
+            .audio-player { bottom: 10px; padding: 5px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Плакат -->
+    <div class="poster">
+        <div class="poster-header">
+            <h1 class="poster-title">У каждого времени свои герои</h1>
+            <p class="poster-subtitle">Биографический портрет воина-интернационалиста А. С. Корчуганова</p>
+        </div>
+
+        <!-- Интерактивные точки -->
+        <div class="hotspot hs-1" data-target="info-1" title="Малая родина">1</div>
+        <div class="hotspot hs-2" data-target="info-2" title="Испытание Афганистаном">2</div>
+        <div class="hotspot hs-3" data-target="info-3" title="Последний бой">3</div>
+        
+        <!-- ОТДЕЛЬНАЯ ТОЧКА ДЛЯ ГЛАВНОГО ФОТО (ПОРТРЕТА) -->
+        <div class="hotspot hs-hero-photo" data-target="hero-photo-modal" title="Главное изображение">🖼️</div>
+        
+        <!-- ОТДЕЛЬНАЯ ТОЧКА ДЛЯ ФОТО УЛИЦЫ -->
+        <div class="hotspot hs-street-photo" data-target="street-photo-modal" title="Улицы памяти">📷</div>
+        
+        <!-- ОТДЕЛЬНАЯ ТОЧКА ДЛЯ ВИДЕО -->
+        <div class="hotspot hs-video" data-target="video-modal" title="Вечная память">▶</div>
+        
+        <!-- Точка источников -->
+        <div class="hotspot hs-5" data-target="info-5" title="Источники информации">i</div>
+
+        <!-- АУДИОПЛЕЕР -->
+        <div class="audio-player">
+            <span>🎵 Включить звук:</span>
+            <audio controls id="bg-audio">
+                <source src="audio.mp3" type="audio/mpeg">
+                Ваш браузер не поддерживает аудио.
+            </audio>
+        </div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="closeBtn">&times;</span>
+            <h2 class="modal-title" id="modalTitle">Заголовок</h2>
+            
+            <div class="modal-text" id="modalText"></div>
+
+            <!-- БЛОК ДЛЯ ДИНАМИЧЕСКОГО ФОТО -->
+            <div id="imageContainer" style="display:none;">
+                <img id="dynamicImage" src="" alt="Фото">
+                <div class="photo-caption" id="photoCaption"></div>
+            </div>
+
+            <!-- БЛОК ДЛЯ ВИДЕО -->
+            <div id="videoContainer" style="display:none;">
+                <video controls>
+                    <source src="memory_video.mp4" type="video/mp4">
+                    Ваш браузер не поддерживает видео.
+                </video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Логика работы -->
+    <script>
+        const data = {
+            'info-1': {
+                title: 'Малая родина и мирная жизнь',
+                text: 'Артур Сергеевич Корчуганов родился 4 июня 1969 года в деревне Дудичи Калинковичского района Гомельской области. Здесь прошло его детство и юность. Повзрослев, Артур уехал из родных мест, чтобы начать трудовую жизнь: работал в Огрской передвижной механизированной колонне (ПМК) в Латвийской ССР.',
+                showImage: false,
+                showVideo: false
+            },
+            'info-2': {
+                title: 'Испытание Афганистаном',
+                text: '25 ноября 1987 года Огрским районным военным комиссариатом Артур был призван в ряды Вооружённых Сил СССР. С июня 1988 года он проходил службу в Республике Афганистан в должности механика-водителя гусеничного тягача. За короткое время проявил себя как смелый, решительный и отлично подготовленный воин.',
+                showImage: false,
+                showVideo: false
+            },
+            'info-3': {
+                title: 'Последний бой',
+                text: 'Ночь 24 июля 1988 года навсегда вписала имя Артура в историю. Рядовой Корчуганов находился на боевом посту, охраняя склад со взрывчатыми веществами. Объект атаковали мятежники. Артур вступил в неравный бой, отражая нападение огнем из автомата. Он удерживал позицию до подхода резерва, но в этом бою получил смертельное ранение. Ценой жизни он спас своих товарищей.',
+                showImage: false,
+                showVideo: false
+            },
+            
+            // --- БЛОК ДЛЯ ГЛАВНОГО ФОТО (ПОРТРЕТА) ---
+            'hero-photo-modal': {
+                title: 'Ключевое изображение',
+                text: 'На этом фото запечатлен образ воина-интернационалиста, чья судьба навсегда связана с историей нашей малой родины.',
+                showImage: true,
+                imageSrc: 'hero_photo.jpg', // Название файла с первой фотографией
+                photoCaption: 'Фотография героя',
+                showVideo: false
+            },
+
+            // --- БЛОК ДЛЯ ФОТО УЛИЦЫ ---
+            'street-photo-modal': {
+                title: 'Улицы памяти',
+                text: 'За проявленное мужество и отвагу рядовой Корчуганов Артур Сергеевич был награждён орденом Красной Звезды (посмертно).\n\nИменами героев Афганской войны называют улицы, чтобы подвиг оставался в сердцах людей. В деревне Дудичи есть улица имени Корчуганова. Также улица имени Артура Корчуганова есть в городе Калинковичи.',
+                showImage: true,
+                imageSrc: 'street_photo.jpg', // Название файла с фото улицы
+                photoCaption: 'Памятник Корчуганова Артура Сергеевича ',
+                showVideo: false
+            },
+
+            // --- БЛОК ДЛЯ ВИДЕО ---
+            'video-modal': {
+                title: 'Вечная память',
+                text: 'Предлагаем вашему вниманию видеофрагмент, посвященный воинам-интернационалистам и памяти о тех, кто с честью выполнил свой долг, но не вернулся домой.',
+                showImage: false,
+                showVideo: true
+            },
+            'info-5': {
+                title: 'Источники информации',
+                text: '• Книга памяти Республики Беларусь (воины-интернационалисты).\n• Материалы Калинковичского краеведческого музея.\n• Архивные данные Огрского районного военного комиссариата.\n• Воспоминания ветеранов-афганцев Калинковичского района.',
+                showImage: false,
+                showVideo: false
+            }
+        };
+
+        const hotspots = document.querySelectorAll('.hotspot');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalText = document.getElementById('modalText');
+        const imageContainer = document.getElementById('imageContainer');
+        const dynamicImage = document.getElementById('dynamicImage');
+        const photoCaption = document.getElementById('photoCaption');
+        const videoContainer = document.getElementById('videoContainer');
+        const closeBtn = document.getElementById('closeBtn');
+
+        function openModal(id) {
+            const info = data[id];
+            if (info) {
+                modalTitle.textContent = info.title;
+                modalText.innerHTML = info.text.replace(/\n/g, '<br><br>');
+                
+                // Показ фото (динамически)
+                if (info.showImage) {
+                    imageContainer.style.display = 'block';
+                    dynamicImage.src = info.imageSrc;
+                    photoCaption.textContent = info.photoCaption;
+                } else {
+                    imageContainer.style.display = 'none';
+                }
+
+                // Показ видео
+                if (info.showVideo) {
+                    videoContainer.style.display = 'block';
+                } else {
+                    videoContainer.style.display = 'none';
+                }
+                
+                modal.classList.add('active');
+            }
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+            const video = videoContainer.querySelector('video');
+            if(video) {
+                video.pause();
+            }
+        }
+
+        hotspots.forEach(hotspot => {
+            hotspot.addEventListener('click', () => {
+                const targetId = hotspot.getAttribute('data-target');
+                openModal(targetId);
+            });
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
